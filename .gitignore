@@ -1,0 +1,16 @@
+# IDE settings (personal to each developer)
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Node / frontend
+node_modules/
+dist/
+
+# Secrets: never commit real credentials
+.env
