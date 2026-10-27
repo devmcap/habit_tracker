@@ -23,3 +23,10 @@ Estimates are rough and will be revised at the end of each phase.
 4. Check: I answer 2–3 questions about the slice. If I cannot, we do not move on.
 5. Sometimes I make a small change myself, to prove I can modify it.
 6. I make the commit with a message I write myself.
+7. Every tested concept is recorded in `docs/learning-log.md`, mistakes included.
+
+## Phase gates
+
+- **Before a phase**: diagnostic quiz on the concepts it needs plus every `REVIEW` entry
+  of the learning log.
+- **After a phase**: closing quiz on what it taught. The phase is not closed until it passes.
