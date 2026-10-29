@@ -52,6 +52,22 @@ Quiz results are recorded in the history table at the end.
   later (even part of a file, with `git add -p`). Each commit then makes sense on its own and
   can be undone without losing the other. History is not only a log: it lets me go back to any
   point and find which commit introduced a bug.
+- **Retest 2026-10-29 (phase 1 diagnostic)**: still `REVIEW`, but better.
+  - **My answer**: `add` chooses which files go into the commit (staging); `commit` is the
+    capture of those changes with a message (Conventional Commits) and builds the history;
+    `push` is the final step that uploads the commits "and they stay saved". Two steps exist
+    so I can split changes into separate commits; with one step "there would be no way to
+    upload changes separately".
+  - **Fixed**: gap 3. I now explain why there are two steps.
+  - **Still open**:
+    1. Commits are already saved after `git commit`, on my machine, and I can go back to them
+       without any internet. `push` does not "save" them: it **copies** them to a remote
+       (GitHub) so they are backed up and shared. Two steps are about **composing** commits,
+       not about uploading.
+    2. I still said a commit captures "the changes". It is a snapshot of **all tracked
+       files**; the diff is computed by comparing two snapshots.
+  - **Same day, again**: I said the file "we are going to upload" when talking about a commit.
+    A commit uploads nothing; only `push` does.
 
 ### Conventional Commits: choosing the type
 
@@ -63,6 +79,10 @@ Quiz results are recorded in the history table at the end.
   `test`, `refactor` (changes code without changing behavior), `chore` (tooling, config).
   Format: `type(optional-scope): imperative summary`, for example
   `feat(habits): add weekly schedule`.
+- **Recheck 2026-10-29**: still `OK`, with a slip. I chose the right type but wrote `doc`
+  instead of `docs`. Types are an exact vocabulary: tools such as commitlint reject `doc`.
+  My reason was "the file belongs to the documentation" (file type); the better reason is the
+  effect: the change only adds documentation, no behavior.
 
 ### User stories and MVP
 
@@ -111,6 +131,114 @@ Quiz results are recorded in the history table at the end.
   was ever committed must be treated as leaked, even if it is deleted later, because it stays
   in the history.
 
+## Phase 1 — Skeleton
+
+### Parts of an HTTP request
+
+- **Status**: `REVIEW`
+- **My answer**: method (GET, POST, PUT, DELETE, PATCH), headers, body, "and I do not remember
+  more".
+- **Mistakes / gaps**:
+  1. I forgot the most important part: **where** the request goes, the URL path (with its
+     optional query string, `?date=2026-10-29`).
+- **Correct explanation**: An HTTP request is plain text with four parts:
+  1. **Request line**: method + path + HTTP version, for example `GET /habits?done=false HTTP/1.1`.
+  2. **Headers**: metadata as `Name: value` lines (`Host`, `Content-Type`, `Authorization`...).
+  3. **An empty line**, which marks the end of the headers.
+  4. **Body** (optional): the data sent, usually JSON in an API. `GET` normally has none.
+
+  The response has the same shape: status line (`HTTP/1.1 200 OK`), headers, empty line, body.
+
+### `GET` vs `POST`
+
+- **Status**: `REVIEW`
+- **My answer**: `GET` sends the information in the URL and does not encrypt it; `POST` sends
+  it in the body and encrypts it. Sensitive data should always go by `POST`.
+- **Mistakes / gaps**:
+  1. **`POST` encrypts nothing.** Encryption comes from **HTTPS** (TLS), and it protects the
+     whole request: path, query string, headers and body alike. Over plain HTTP, a `POST`
+     body is readable by anyone in between, exactly like a URL.
+  2. The advice (sensitive data in the body, not the URL) is right, but for a different
+     reason: URLs end up in server logs, browser history and bookmarks, and are sent to other
+     sites in the `Referer` header. Bodies are not.
+  3. I did not say what each method **means**.
+- **Correct explanation**: The method states the **intent** of the request.
+  - `GET` **reads** a resource. It must not change anything on the server ("safe"), so
+    repeating it is harmless and browsers and proxies may cache it. Parameters go in the
+    query string.
+  - `POST` **sends data to be processed**, usually to create something (`POST /habits` creates
+    a habit). Repeating it can create a duplicate. Data goes in the body.
+
+### HTTP status codes 200, 404, 500
+
+- **Status**: `OK` (answered correctly on the first try, with no previous explanation)
+- **My answer**: 200 OK, the request succeeded. 404 not found, the address does not exist
+  ("or you have no permission"). 500 server error; the client is not to blame.
+- **Additional notes**: Codes are grouped by first digit: 2xx success, 4xx the client did
+  something wrong, 5xx the server failed. The "no permission" case has its own codes:
+  **401** (I do not know who you are: not logged in) and **403** (I know who you are and you
+  are not allowed). Even so, my intuition was useful: in phase 3, asking for another user's
+  habit will return **404**, not 403, on purpose, so the API does not reveal that the habit
+  exists.
+
+### What `@app.get("/habits")` does
+
+- **Status**: `REVIEW`
+- **My answer**: It creates a route with the path `/habits`; `@app.<http-method>` creates the
+  route with the HTTP method I want.
+- **Mistakes / gaps**:
+  1. I did not mention the **function** below the decorator, which is the whole point: the
+     route is a link between a request and that function.
+- **Correct explanation**: `@app.get("/habits")` is a **decorator**: it receives the function
+  defined below it and **registers** it in the app as the handler for the pair
+  (`GET`, `/habits`). When a request with that method and path arrives, FastAPI calls the
+  function, and converts its return value (a dict, a list, a model) into a JSON response with
+  status 200. A `POST /habits` would not match: same path, different method, different
+  handler.
+
+### Why a `venv`
+
+- **Status**: `REVIEW` (close; two corrections)
+- **My answer**: A virtual environment stores all the project's dependencies, which avoids
+  installing everything on my own machine. The operating system has dependencies that projects
+  also use, and installing on top of them could cause conflicts; the venv isolates everything.
+- **Mistakes / gaps**:
+  1. Packages **are** installed on my machine: in a folder inside the project (`.venv/`)
+     instead of the global Python installation.
+  2. I missed the most common conflict: **between projects**. Project A needs
+     `fastapi==0.100` and project B needs `fastapi==0.115`; with one global installation, only
+     one version can exist.
+- **Correct explanation**: A venv is a folder with its own Python interpreter link and its own
+  `site-packages`. Each project gets its own versions, so projects cannot break each other or
+  the system Python. Together with a dependency file (`requirements.txt` or `pyproject.toml`)
+  it makes the setup **reproducible**: anyone can recreate the same environment. It only
+  isolates **Python packages**; isolating the whole system (OS libraries, database) is what
+  Docker does in phase 8.
+
+### Server, ASGI and framework
+
+- **Status**: `NEW`
+- **Explanation**: FastAPI does not listen on any port. A **server** (Uvicorn) opens the port,
+  reads the bytes from the network and parses HTTP. **ASGI** is the contract between that
+  server and the framework, so the server can be swapped without touching my code. Flask uses
+  **WSGI**, its synchronous predecessor; the "A" in ASGI means asynchronous: while one request
+  waits for something slow (database, sending an email), the server can serve others.
+
+### One repository or two (monorepo vs polyrepo)
+
+- **Status**: `NEW`
+- **What I thought**: a big backend should go in its own repository.
+- **Explanation**: Size is not the criterion (Google keeps almost everything in one
+  repository). What decides it is **who works on it and how it changes**:
+  - **Same repository** when changes cross both sides: a new API field and the screen that
+    shows it go in one commit, so history never has a frontend that expects an API that does
+    not exist yet. One history, one place for docs.
+  - **Separate repositories** when different teams own each part, they are released and
+    versioned independently, or they need different access permissions.
+  - Repository layout and deployment are independent: backend and frontend from one
+    repository can still be deployed separately. The cost of a monorepo is CI work, such as
+    not running frontend tests when only the backend changed.
+
 ---
 
 ## Quiz history
@@ -119,9 +247,10 @@ Quiz results are recorded in the history table at the end.
 |---|---|---|---|---|
 | 2026-10-27 | Check | 0 | Partial | `git add` vs `git commit`: right idea, three gaps (see entry) |
 | 2026-10-27 | Check | 0 | Pass | Conventional Commits type: `docs`, correct reasoning |
+| 2026-10-29 | Recheck | 0 | Pass (slip) | Conventional Commits: right type, wrote `doc` instead of `docs` |
+| 2026-10-29 | Diagnostic | 1 | Partial | Status codes OK; Git improved but still `REVIEW`; HTTP parts, `GET`/`POST` (encryption myth), decorator and venv to `REVIEW` |
 
 ## Pending
 
-- Phase 1 diagnostic quiz (5 questions: Git `add`/`commit`/`push` review, HTTP request parts,
-  `GET` vs `POST` and status codes 200/404/500, what `@app.get("/habits")` does, why `venv`).
-  To be answered at the start of the next session.
+- Phase 1 closing quiz must include every `REVIEW` entry above: Git `add`/`commit`/`push`,
+  HTTP request parts, `GET` vs `POST`, `@app.get` decorator, `venv`.
