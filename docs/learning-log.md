@@ -68,10 +68,25 @@ Quiz results are recorded in the history table at the end.
        files**; the diff is computed by comparing two snapshots.
   - **Same day, again**: I said the file "we are going to upload" when talking about a commit.
     A commit uploads nothing; only `push` does.
+- **Check 2026-10-29 (after the first `push` to GitHub)**: correct, but the same day as the
+  explanation, so it stays `REVIEW` until a later session confirms it.
+  - **Question 1**: what traveled to GitHub with `push`, loose files or commits?
+    **My answer**: the commits.
+  - **Question 2**: if I edit `docs/roadmap.md` and commit without pushing, what does someone
+    opening the repository on GitHub see? **My answer**: the commits that were pushed; the new
+    one is local and has not been uploaded.
+  - **Fixed**: open point 1. `commit` is local, `push` copies commits to the remote.
+  - **Precision**: `push` sends the commits the remote does not have yet (each one with its
+    full snapshot) and moves the remote branch (`origin/main`) to point at the last one. In
+    question 2, GitHub would show the **previous** version of `roadmap.md`, and
+    `git status` would say `Your branch is ahead of 'origin/main' by 1 commit`.
+  - **Not tested yet**: open point 2 (snapshot of all tracked files vs "the changes").
+  - **Same day, later**: I said "para subir docs/learning-log.md" when proposing a commit
+    message. Vocabulary slip again: a commit **records** locally; only `push` uploads.
 
 ### Conventional Commits: choosing the type
 
-- **Status**: `OK` (answered correctly on the first try, with no previous explanation)
+- **Status**: `REVIEW` (type: OK; message format: see check of 2026-10-29)
 - **My answer**: The commit adding the learning log is `docs`, because the file documents the
   learning in the project. It does not add a feature or fix a bug.
 - **Additional notes**: The type describes the **effect of the change**, not the file type.
@@ -83,6 +98,18 @@ Quiz results are recorded in the history table at the end.
   instead of `docs`. Types are an exact vocabulary: tools such as commitlint reject `doc`.
   My reason was "the file belongs to the documentation" (file type); the better reason is the
   effect: the change only adds documentation, no behavior.
+- **Check 2026-10-29 (phase 1, slice 1 commits)**: types right (`docs`, `feat`), format wrong.
+  Moves back to `REVIEW` for the format.
+  - **My messages**: `(docs) phase 1 started, firsts concepts asked` and
+    `(feat) add backend with first rute get /health`.
+  - **Mistakes / gaps**:
+    1. Format is `type: summary` or `type(scope): summary`. Parentheses hold the optional
+       **scope**, never the type: `(docs) ...` is not recognized by tools.
+    2. The summary is an **imperative verb** describing what the commit does ("add",
+       "record"), not a past-tense status ("phase 1 started").
+    3. Typos stay in history forever: "firsts" -> "first", "rute" -> "route".
+  - **Better**: `docs: record phase 1 slice 1 check results` and
+    `feat(backend): add FastAPI app with GET /health endpoint`.
 
 ### User stories and MVP
 
@@ -195,6 +222,25 @@ Quiz results are recorded in the history table at the end.
   function, and converts its return value (a dict, a list, a model) into a JSON response with
   status 200. A `POST /habits` would not match: same path, different method, different
   handler.
+- **Check 2026-10-29 (phase 1, slice 1)**: correct, same day, so it stays `REVIEW`.
+  - **Question**: if I delete `@app.get("/health")` and restart, what does `GET /health`
+    return? **My answer**: `404 Not Found`, because the decorator defines the route and
+    without it the route does not exist.
+  - **Precision**: the function `health` still exists; it is just never **registered** in the
+    app's route table, so FastAPI has nothing to call for that path.
+
+### The `app` object
+
+- **Status**: `NEW`
+- **My question**: is my application "inside" the variable `app`?
+- **Explanation**: `FastAPI(...)` creates an **object** (an instance of the `FastAPI` class)
+  and `app` is just the name that points to it. The object holds the route table and the
+  settings. The file is a recipe: when Python imports `app/main.py` it runs it top to
+  bottom, line 3 builds the empty object, and each `@app.get(...)` adds a route to its
+  table. After the import, "my application" is that object in memory with its routes.
+  `uvicorn app.main:app` means "import module `app.main` and take the variable `app`";
+  Uvicorn keeps it and calls it once per request. The name `app` is a convention: with
+  `api = FastAPI()` the command would be `uvicorn app.main:api`.
 
 ### Why a `venv`
 
@@ -214,6 +260,22 @@ Quiz results are recorded in the history table at the end.
   it makes the setup **reproducible**: anyone can recreate the same environment. It only
   isolates **Python packages**; isolating the whole system (OS libraries, database) is what
   Docker does in phase 8.
+- **Check 2026-10-29 (phase 1, slice 1)**: partial, stays `REVIEW`.
+  - **Question**: a teammate clones the repository. Why is `.venv/` missing, and which two
+    commands give them my environment?
+  - **My answer**: it is listed in `.gitignore`, which defines the files ignored when
+    committing. Command: `pip install -r requirements.txt`.
+  - **Mistakes / gaps**:
+    1. I gave one command, not two. First the venv must exist: `py -3.14 -m venv .venv`.
+       Without it, `pip install` goes into the global Python, the exact thing the venv avoids.
+    2. I did not say **why** it is ignored, only that it is.
+  - **Correct explanation**: from `backend/`, `py -3.14 -m venv .venv`, then
+    `.venv\Scripts\python -m pip install -r requirements.txt` (or activate first and use
+    `pip`). `.venv/` is not committed because it is **rebuildable** from `requirements.txt`,
+    heavy (thousands of files), and tied to my machine (Windows binaries, absolute paths). The
+    repository keeps the recipe (`requirements.txt`), not the result. Precisely,
+    `.gitignore` stops untracked files from being added with `git add`, so they never get
+    into a commit.
 
 ### Server, ASGI and framework
 
@@ -223,6 +285,9 @@ Quiz results are recorded in the history table at the end.
   server and the framework, so the server can be swapped without touching my code. Flask uses
   **WSGI**, its synchronous predecessor; the "A" in ASGI means asynchronous: while one request
   waits for something slow (database, sending an email), the server can serve others.
+- **Check 2026-10-29 (phase 1, slice 1)**: correct, same day, so it stays `NEW` until a later
+  session.
+  - **Question**: who opens port 8000, FastAPI or Uvicorn? **My answer**: Uvicorn, the server.
 
 ### One repository or two (monorepo vs polyrepo)
 
@@ -249,6 +314,8 @@ Quiz results are recorded in the history table at the end.
 | 2026-10-27 | Check | 0 | Pass | Conventional Commits type: `docs`, correct reasoning |
 | 2026-10-29 | Recheck | 0 | Pass (slip) | Conventional Commits: right type, wrote `doc` instead of `docs` |
 | 2026-10-29 | Diagnostic | 1 | Partial | Status codes OK; Git improved but still `REVIEW`; HTTP parts, `GET`/`POST` (encryption myth), decorator and venv to `REVIEW` |
+| 2026-10-29 | Check | 1 | Pass | `commit` (local) vs `push` (copies commits to the remote): both answers right; same day, so still `REVIEW` |
+| 2026-10-29 | Check | 1 | Partial | Slice 1 (`GET /health`): decorator removed -> 404 OK; Uvicorn opens the port OK; venv: missed the `venv` creation command and why `.venv/` is not committed |
 
 ## Pending
 
