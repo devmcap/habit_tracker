@@ -1,4 +1,7 @@
+from typing import Annotated
+
 from fastapi import FastAPI, HTTPException
+from fastapi.params import Query
 
 app = FastAPI(title="Habit Tracker API")
 
@@ -18,11 +21,15 @@ def health() -> dict[str, str]:
 
 
 @app.get("/habits")
-def list_habits(done: bool | None = None) -> list[dict]:
+def list_habits(
+        done: bool | None = None,
+        limit: Annotated[int | None, Query(ge=1)] = None,
+) -> list[dict]:
     """List habits; ?done=true or ?done=false keeps only matching ones."""
-    if done is None:
-        return HABITS
-    return [habit for habit in HABITS if habit["done"] == done]
+    habits = HABITS
+    if done is not None:
+        habits = [habit for habit in HABITS if habit["done"] == done]
+    return habits[:limit]
 
 
 @app.get("/habits/{habit_id}")
