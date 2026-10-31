@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 
 app = FastAPI(title="Habit Tracker API")
 
@@ -13,6 +13,11 @@ HABITS: list[dict] = [
 ]
 
 
+def get_habit_store() -> list[dict]:
+    """Provide the habits that endpoints read; tests can replace it with an override."""
+    return HABITS
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     """Tell clients the API process is up and answering requests."""
@@ -21,6 +26,7 @@ def health() -> dict[str, str]:
 
 @app.get("/habits")
 def list_habits(
+        store: Annotated[list[dict], Depends(get_habit_store)],
         done: Annotated[
             bool | None,
             Query(description="Shows only done (true) or pending (false) habits. Omit it to get all habits."),
@@ -31,16 +37,19 @@ def list_habits(
         ] = None,
 ) -> list[dict]:
     """List habits."""
-    habits = HABITS
+    habits = store
     if done is not None:
-        habits = [habit for habit in HABITS if habit["done"] == done]
+        habits = [habit for habit in store if habit["done"] == done]
     return habits[:limit]
 
 
 @app.get("/habits/{habit_id}")
-def get_habit(habit_id: int) -> dict:
+def get_habit(
+        habit_id: int,
+        store: Annotated[list[dict], Depends(get_habit_store)],
+) -> dict:
     """Return one habit by id, or 404 if it does not exist."""
-    for habit in HABITS:
+    for habit in store:
         if habit["id"] == habit_id:
             return habit
     raise HTTPException(status_code=404, detail="Habit not found")
