@@ -409,6 +409,46 @@ Quiz results are recorded in the history table at the end.
 - **Import note**: `from fastapi import Query` is the public import; PyCharm suggested
   `from fastapi.params import Query`, an internal module. It works today, but internal
   paths can change between versions.
+- **Documenting parameters**: each fact lives in one place. `Query(description=...)`
+  explains one parameter and shows next to it in `/docs`; the docstring is a one-line summary
+  of the whole endpoint (also shown in `/docs`). Repeating parameter details in both places
+  makes them drift apart. A parameter description must make sense on its own, including
+  what happens when the parameter is omitted.
+
+### Dependency injection (`Depends`)
+
+- **Status**: `NEW`
+- **My first reaction**: "I do not see what it is for". Fair: with an in-memory list the
+  benefit is invisible; it pays off from phase 2 on.
+- **Explanation**: an endpoint **declares** what it needs
+  (`store: Annotated[list[dict], Depends(get_habit_store)]`) and **FastAPI provides it**,
+  calling `get_habit_store()` on every request. Calling `get_habit_store()` inside the
+  endpoint would also keep the data source in one place, but then the endpoint decides
+  where its data comes from and nobody can change it from outside. With `Depends`, FastAPI
+  decides, so `app.dependency_overrides[get_habit_store] = ...` can plug in other data
+  (tests with known data, real data untouched) without changing a line of the endpoints.
+  Analogy: a lamp with a plug vs a lamp soldered to the wall wires.
+  Coming next: `get_db` (phase 2) opens a session per request and FastAPI always closes it;
+  `get_current_user` (phase 3) is written once and reused, answering 401 when not logged in.
+- **My summary**: Depends gives the data from one point; with an override, tests use fake
+  data and never touch the real source; calling the function directly would force code
+  changes to test, or tests would touch real data.
+  **Precision**: "one point" is also true of a plain function call. What `Depends` adds is
+  **who decides**: FastAPI, so it can be replaced from outside.
+- **Check 2026-10-31 (phase 1, slice 3)**: correct, same day, so it stays `NEW`.
+  - **Question**: why does `store` not appear in `/docs` while `done` and `limit` do?
+    **My answer**: the API user does not need to touch it; it is where the data comes from.
+    **Precision**: it is not that the client does not *need* to send it; the client
+    **cannot**. FastAPI resolves `Depends` on the server and never reads it from the request,
+    so it is not part of the API contract (OpenAPI).
+  - **Question**: why does `/habits/1` return 404 in the override demo, and did `get_habit`
+    change? **My answer**: the override provides `FAKE_HABITS` (ids 100 and 200); no endpoint
+    code changed, only the override in the demo file.
+  - **Question**: what does `Depends(get_habit_store())` (with parentheses) pass?
+    **My answer**: the result, not the function, so the override would not work.
+    **Extra**: `get_habit_store()` would run once at import time, and FastAPI fails at
+    startup with `TypeError: [...] is not a callable object`, because it needs something it
+    can call on every request.
 
 ---
 
@@ -424,9 +464,11 @@ Quiz results are recorded in the history table at the end.
 | 2026-10-29 | Check | 1 | Partial | Slice 1 (`GET /health`): decorator removed -> 404 OK; Uvicorn opens the port OK; venv: missed the `venv` creation command and why `.venv/` is not committed |
 | 2026-10-31 | Check | 1 | Partial | Slice 2 (`/habits`): 404 vs 422 OK; `bool \| None` behavior OK, weak reason; `limit` is a query param OK, but put on the single-habit endpoint |
 | 2026-10-31 | Exercise | 1 | Pass (with hints) | Implemented `limit` myself: filter then slice; found the `limit=-1` bug by testing; added `Query(ge=1)` |
+| 2026-10-31 | Check | 1 | Pass | Slice 3 (`Depends`): `store` hidden from `/docs` (client cannot send it), override demo 404, `Depends(f())` passes the result |
 
 ## Pending
 
+- Next: phase 1 closing quiz (all phase 1 concepts are now introduced).
 - Phase 1 closing quiz must include every `REVIEW` entry above: Git `add`/`commit`/`push`,
   Conventional Commits format, HTTP request parts, `GET` vs `POST`, `@app.get` decorator,
   `venv`, path vs query params.
