@@ -83,6 +83,12 @@ Quiz results are recorded in the history table at the end.
   - **Not tested yet**: open point 2 (snapshot of all tracked files vs "the changes").
   - **Same day, later**: I said "para subir docs/learning-log.md" when proposing a commit
     message. Vocabulary slip again: a commit **records** locally; only `push` uploads.
+- **Incident 2026-10-31**: commit `8417e7b` was pushed with `# @app.get("/health")` commented
+  out (left over from the slice 1 check experiment), so `GET /health` returned 404 on
+  GitHub. Fixed in `64f3564`.
+  - **Lesson**: before every commit, read what is staged (`git diff --staged`, or the diff
+    view in PyCharm's Commit window). A commit records **exactly** what is staged, including
+    leftovers from experiments.
 
 ### Conventional Commits: choosing the type
 
@@ -110,6 +116,15 @@ Quiz results are recorded in the history table at the end.
     3. Typos stay in history forever: "firsts" -> "first", "rute" -> "route".
   - **Better**: `docs: record phase 1 slice 1 check results` and
     `feat(backend): add FastAPI app with GET /health endpoint`.
+- **Commit 2026-10-31 (written without a model answer)**: format fixed; stays `REVIEW` until
+  the phase 1 closing quiz.
+  - **My message**: `fix(main): uncomment decorator for GET /health endpoint`.
+  - **Right**: type `fix`, `type(scope): summary` format, lowercase imperative.
+  - **To improve**:
+    1. Keep scopes consistent: the previous commit used `backend`. The scope names an area
+       of the project, not a file.
+    2. Describe the **effect**, not the mechanics: "uncomment decorator" says how; the
+       reader of the history needs what, for example `fix(backend): restore GET /health route`.
 
 ### User stories and MVP
 
@@ -276,6 +291,12 @@ Quiz results are recorded in the history table at the end.
     repository keeps the recipe (`requirements.txt`), not the result. Precisely,
     `.gitignore` stops untracked files from being added with `git add`, so they never get
     into a commit.
+- **Incident 2026-10-31**: `uvicorn` was "not recognized" in a new PowerShell terminal,
+  although it worked two days before.
+  - **Explanation**: activating a venv is **not permanent**. `Activate.ps1` only prepends
+    `.venv\Scripts` to the `PATH` of **that terminal**. Every new terminal must activate it
+    again (the prompt shows `(.venv)` when active), or call the venv's Python directly:
+    `.\.venv\Scripts\python -m uvicorn app.main:app --reload`.
 
 ### Server, ASGI and framework
 
@@ -304,6 +325,49 @@ Quiz results are recorded in the history table at the end.
     repository can still be deployed separately. The cost of a monorepo is CI work, such as
     not running frontend tests when only the backend changed.
 
+### Path params vs query params
+
+- **Status**: `REVIEW`
+- **Explanation**: In `GET /habits/42?done=true&limit=10`, `42` is a **path param** and
+  `done`, `limit` are **query params**.
+  - **Path param**: part of the route (`/habits/{habit_id}`), required, **identifies** a
+    resource. Removing it changes which resource I am talking about.
+  - **Query param**: after `?`, separated by `&`, usually optional with a default;
+    **filters, sorts, paginates** or sets options. Removing it only changes how the answer
+    comes back.
+  - In FastAPI, a function parameter whose name matches `{...}` in the route is a path
+    param; any other simple-typed parameter is a query param. With a default it is
+    optional; without one it is required (422 if missing).
+- **Check 2026-10-31 (phase 1, slice 2)**: partial.
+  - **Question**: `done: bool | None = None` changed to `done: bool = False`; what does
+    `GET /habits` return with no parameters, and why is it a bug?
+    **My answer**: only the habits not done yet, because the default is `False`; a bug "for
+    that reason".
+    **Gap**: the behavior is right, but the reason is the consequence: no URL could return
+    **all** habits any more. `None` is the third state that means "no filter was given".
+  - **Question**: should `limit` (at most N habits) be a path or a query param, and how would
+    I declare it? **My answer**: query param, because it goes after `?`, can be optional, and
+    is not in the route of the decorator. Example:
+    `@app.get('/habits/{habit_id}') def get_habit(habit_id: int, limit: int | None = None)`.
+    **Mistake**: right kind of parameter, wrong endpoint. `/habits/{habit_id}` returns **one**
+    habit, so there is nothing to limit. `limit` belongs to the list endpoint:
+    `@app.get("/habits") def list_habits(done: bool | None = None, limit: int | None = None)`.
+
+### Automatic validation: 404 from my code vs 422 from FastAPI
+
+- **Status**: `NEW`
+- **Explanation**: Everything in a URL arrives as text. Type hints (`habit_id: int`,
+  `done: bool`) tell FastAPI what I expect; it uses **Pydantic** to convert (`"42"` -> `42`)
+  and to reject invalid input with **422 Unprocessable Entity** before my function runs. The
+  error's `loc` field says where the bad value was (`["path", "habit_id"]`,
+  `["query", "done"]`). A **404** for a missing habit is different: the input is valid, my
+  code looks for the habit and decides to `raise HTTPException(status_code=404, ...)`.
+- **Check 2026-10-31 (phase 1, slice 2)**: correct, same day, so it stays `NEW`.
+  - **Question**: why does `/habits/99` return 404 and `/habits/abc` 422, and who generates
+    each error? **My answer**: 99 is a valid int, my code does not find it in the list and
+    raises `HTTPException` 404 with `Habit not found`; `abc` is not an int, so FastAPI rejects
+    it with 422 while validating with Pydantic.
+
 ---
 
 ## Quiz history
@@ -316,8 +380,10 @@ Quiz results are recorded in the history table at the end.
 | 2026-10-29 | Diagnostic | 1 | Partial | Status codes OK; Git improved but still `REVIEW`; HTTP parts, `GET`/`POST` (encryption myth), decorator and venv to `REVIEW` |
 | 2026-10-29 | Check | 1 | Pass | `commit` (local) vs `push` (copies commits to the remote): both answers right; same day, so still `REVIEW` |
 | 2026-10-29 | Check | 1 | Partial | Slice 1 (`GET /health`): decorator removed -> 404 OK; Uvicorn opens the port OK; venv: missed the `venv` creation command and why `.venv/` is not committed |
+| 2026-10-31 | Check | 1 | Partial | Slice 2 (`/habits`): 404 vs 422 OK; `bool \| None` behavior OK, weak reason; `limit` is a query param OK, but put on the single-habit endpoint |
 
 ## Pending
 
 - Phase 1 closing quiz must include every `REVIEW` entry above: Git `add`/`commit`/`push`,
-  HTTP request parts, `GET` vs `POST`, `@app.get` decorator, `venv`.
+  Conventional Commits format, HTTP request parts, `GET` vs `POST`, `@app.get` decorator,
+  `venv`, path vs query params.
