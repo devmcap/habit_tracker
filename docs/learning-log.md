@@ -125,6 +125,14 @@ Quiz results are recorded in the history table at the end.
        of the project, not a file.
     2. Describe the **effect**, not the mechanics: "uncomment decorator" says how; the
        reader of the history needs what, for example `fix(backend): restore GET /health route`.
+- **Commits 2026-10-31 (slice 2)**: code and docs correctly split into two commits.
+  - `feat(main): add GET /habits and GET /habits/{habit_id} endpoint with temporary in-memory habits list data`:
+    scope `main` again (use `backend`) and far too long; keep the summary under about 72
+    characters and put details in the body. Better: `feat(backend): add endpoints to list and get habits`.
+  - `docs: add new explanation of query path and query params`: typo ("query path"); the
+    commit records check results, so better `docs: record phase 1 slice 2 check results`.
+  - `feat(backend): add limit to habit list`: good. Right scope, short, imperative,
+    describes the effect.
 
 ### User stories and MVP
 
@@ -243,6 +251,11 @@ Quiz results are recorded in the history table at the end.
     without it the route does not exist.
   - **Precision**: the function `health` still exists; it is just never **registered** in the
     app's route table, so FastAPI has nothing to call for that path.
+- **Question 2026-10-31**: "what is `list_habits`? Nothing defines it" (it is defined right
+  under `@app.get("/habits")`). The confusion: no code ever calls `list_habits(...)`.
+  - **Explanation**: I never call handlers; **FastAPI** does, after the decorator registers
+    them. The function name is for readers of the code (and the title in `/docs`); the URL
+    comes only from the decorator. Renaming the function does not change the URL.
 
 ### The `app` object
 
@@ -368,6 +381,35 @@ Quiz results are recorded in the history table at the end.
     raises `HTTPException` 404 with `Habit not found`; `abc` is not an int, so FastAPI rejects
     it with 422 while validating with Pydantic.
 
+### Slicing and negative indexes
+
+- **Status**: `NEW`
+- **Where I got stuck**: I tried to put a counter inside a list comprehension to stop after
+  `limit` items. A comprehension has no `break`; the clean way is two steps: **filter**, then
+  **cut** the result with slicing.
+- **Explanation**: `items[:n]` returns the first `n` items (no error if `n` is bigger than
+  the list). `items[:None]` returns the whole list, so an optional `limit` needs no `if`.
+  **Negative indexes count from the end**: `items[-1]` is the last item and `items[:-1]` is
+  everything except the last one.
+- **My discovery**: I expected `?limit=-1` to return all habits; it returned all except the
+  last. Valid Python, but a bug for the API: nonsense input must be rejected, not
+  interpreted. Same for `limit=0`, which returned `[]`.
+- **Structure lesson**: my first version repeated `[:limit]` in both branches of the `if`.
+  When both branches end with the same step, that step goes after the `if`.
+
+### Validation constraints with `Query`
+
+- **Status**: `NEW`
+- **Explanation**: Types reject the wrong kind of value (`limit=abc`); **constraints** reject
+  values of the right kind that make no sense (`limit=-1`).
+  `limit: Annotated[int | None, Query(ge=1)] = None` keeps the type `int | None` and adds the
+  rule "greater than or equal to 1". FastAPI checks it before calling the function and
+  answers 422 with `"type": "greater_than_equal"`. Other constraints: `gt`, `le`, `lt`,
+  `max_length`.
+- **Import note**: `from fastapi import Query` is the public import; PyCharm suggested
+  `from fastapi.params import Query`, an internal module. It works today, but internal
+  paths can change between versions.
+
 ---
 
 ## Quiz history
@@ -381,6 +423,7 @@ Quiz results are recorded in the history table at the end.
 | 2026-10-29 | Check | 1 | Pass | `commit` (local) vs `push` (copies commits to the remote): both answers right; same day, so still `REVIEW` |
 | 2026-10-29 | Check | 1 | Partial | Slice 1 (`GET /health`): decorator removed -> 404 OK; Uvicorn opens the port OK; venv: missed the `venv` creation command and why `.venv/` is not committed |
 | 2026-10-31 | Check | 1 | Partial | Slice 2 (`/habits`): 404 vs 422 OK; `bool \| None` behavior OK, weak reason; `limit` is a query param OK, but put on the single-habit endpoint |
+| 2026-10-31 | Exercise | 1 | Pass (with hints) | Implemented `limit` myself: filter then slice; found the `limit=-1` bug by testing; added `Query(ge=1)` |
 
 ## Pending
 
