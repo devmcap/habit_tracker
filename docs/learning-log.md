@@ -133,6 +133,28 @@ Quiz results are recorded in the history table at the end.
     commit records check results, so better `docs: record phase 1 slice 2 check results`.
   - `feat(backend): add limit to habit list`: good. Right scope, short, imperative,
     describes the effect.
+  - `fix(backend): change Query import from FastAPI and documentation.`: not a `fix` (no
+    behavior changed), trailing period, vague. Better: `docs(backend): describe /habits query parameters`.
+  - `docs: completed phase 1 slice 2`: past tense status again. Better:
+    `docs: record phase 1 slice 2 results`.
+- **Commits 2026-10-31 (slice 3)**: both imperative now; the remaining gaps are type choice
+  and English.
+  - `feat(backend): add dependencies injection to get habits data`: behavior did not change,
+    so the type is `refactor`. English: "dependency injection" and "habit data" (see
+    noun-as-adjective rule below). Better: `refactor(backend): inject habit store with Depends`.
+  - `docs: register slice 3 of phase 1`: imperative and clear. "Register" is a false friend
+    of "registrar": in English it means to sign up or enrol (register a user, a domain).
+    To write something down is **record**. Better: `docs: record phase 1 slice 3 results`.
+- **English for commit summaries** (I am a native Spanish speaker; these are my usual slips):
+  - Test: the summary must complete "If applied, this commit will ...". Base verb, no `-ed`,
+    no `-s`, no final period.
+  - A noun used as an adjective stays **singular**: habit tracker, habit data, dependency
+    injection (not "habits data", "dependencies injection").
+  - Useful verbs: `add` (new thing), `remove`, `fix`, `update` (change existing content),
+    `rename`, `move`, `record` (write results down), `describe` / `document`,
+    `extract` / `inject` (refactors), `restore` (bring back something that broke).
+  - Type by **effect**: new behavior `feat`; wrong behavior corrected `fix`; same behavior,
+    different code `refactor`; only documentation `docs`.
 
 ### User stories and MVP
 
