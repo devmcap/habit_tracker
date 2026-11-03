@@ -37,7 +37,7 @@ Quiz results are recorded in the history table at the end.
 
 ### Git: `git add` vs `git commit`
 
-- **Status**: `REVIEW`
+- **Status**: `OK` (phase 1 closing quiz, 2026-11-03)
 - **My answer**: `git add` puts files in staging, the area that prepares what will go into the
   commit. `git commit` takes what is staged and makes a "capture" of the changes. Many commits
   form a history of what I have done.
@@ -89,10 +89,16 @@ Quiz results are recorded in the history table at the end.
   - **Lesson**: before every commit, read what is staged (`git diff --staged`, or the diff
     view in PyCharm's Commit window). A commit records **exactly** what is staged, including
     leftovers from experiments.
+- **Closing quiz 2026-11-03 (phase 1)**: correct, moves to `OK`.
+  - **My answer**: `add` puts the changed files in staging to choose what goes into the
+    commit; `commit` takes a capture of the whole project and stores it on my machine, so I
+    can review commits without internet; `push` uploads those commits to the remote on GitHub.
+  - **Fixed**: open point 2. A commit is a capture of the **whole project**, not only of the
+    changes, and it is local.
 
 ### Conventional Commits: choosing the type
 
-- **Status**: `REVIEW` (type: OK; message format: see check of 2026-10-29)
+- **Status**: `REVIEW` (type: `OK` since the 2026-11-03 closing quiz; message format still `REVIEW`)
 - **My answer**: The commit adding the learning log is `docs`, because the file documents the
   learning in the project. It does not add a feature or fix a bug.
 - **Additional notes**: The type describes the **effect of the change**, not the file type.
@@ -155,6 +161,19 @@ Quiz results are recorded in the history table at the end.
     `extract` / `inject` (refactors), `restore` (bring back something that broke).
   - Type by **effect**: new behavior `feat`; wrong behavior corrected `fix`; same behavior,
     different code `refactor`; only documentation `docs`.
+- **Closing quiz 2026-11-03 (phase 1)**: type 3/3, format still `REVIEW`.
+  - **Question**: which type for (a) a new `DELETE /habits/{habit_id}` endpoint, (b) fixing
+    `limit=-1` returning data instead of an error, (c) renaming an internal function without
+    changing the API? **My answer**: `feat`, `fix`, `refactor`. All right.
+  - **Same day, real commit**: my first draft was
+    `record corrections in commit messages in learning log`.
+    1. No type: it must start with `docs:`.
+    2. "corrections in commit messages" reads as if I had corrected something *inside* the
+       messages; what I recorded is feedback *about* them: "commit message feedback".
+    3. Missing article ("in **the** learning log"); the phrase can go, since `docs` and the
+       diff already say where.
+    4. Right: imperative `record` (not `register`), lowercase, no final period.
+  - **Final message**: `docs: record commit message feedback` (`6d4b7b6`). Good.
 
 ### User stories and MVP
 
@@ -207,7 +226,7 @@ Quiz results are recorded in the history table at the end.
 
 ### Parts of an HTTP request
 
-- **Status**: `REVIEW`
+- **Status**: `OK` (phase 1 closing quiz, 2026-11-03)
 - **My answer**: method (GET, POST, PUT, DELETE, PATCH), headers, body, "and I do not remember
   more".
 - **Mistakes / gaps**:
@@ -220,10 +239,17 @@ Quiz results are recorded in the history table at the end.
   4. **Body** (optional): the data sent, usually JSON in an API. `GET` normally has none.
 
   The response has the same shape: status line (`HTTP/1.1 200 OK`), headers, empty line, body.
+- **Closing quiz 2026-11-03 (phase 1)**: correct, moves to `OK`.
+  - **My answer**: method, HTTP version, path, headers, optional body, "and a final empty
+    line that marks where the request ends".
+  - **Fixed**: the path (the gap of the diagnostic).
+  - **Precision**: the empty line separates the **headers from the body**; it does not end
+    the request. Where the body ends is given by the `Content-Length` header (or the
+    connection closing).
 
 ### `GET` vs `POST`
 
-- **Status**: `REVIEW`
+- **Status**: `OK` (phase 1 closing quiz, 2026-11-03)
 - **My answer**: `GET` sends the information in the URL and does not encrypt it; `POST` sends
   it in the body and encrypts it. Sensitive data should always go by `POST`.
 - **Mistakes / gaps**:
@@ -240,6 +266,13 @@ Quiz results are recorded in the history table at the end.
     query string.
   - `POST` **sends data to be processed**, usually to create something (`POST /habits` creates
     a habit). Repeating it can create a duplicate. Data goes in the body.
+- **Closing quiz 2026-11-03 (phase 1)**: correct, moves to `OK`.
+  - **My answer**: `GET` reads; calling it 20 times changes nothing. `POST` sends data that
+    can be stored or change something. `POST` is not safer and encrypts nothing; HTTPS
+    encrypts the body so a man in the middle cannot read it.
+  - **Fixed**: the encryption myth of the diagnostic.
+  - **Precision**: HTTPS encrypts the **whole** request (path, query string, headers, body),
+    not only the body. "Changes nothing when repeated" is called a **safe** method.
 
 ### HTTP status codes 200, 404, 500
 
@@ -255,7 +288,7 @@ Quiz results are recorded in the history table at the end.
 
 ### What `@app.get("/habits")` does
 
-- **Status**: `REVIEW`
+- **Status**: `OK` (phase 1 closing quiz, 2026-11-03)
 - **My answer**: It creates a route with the path `/habits`; `@app.<http-method>` creates the
   route with the HTTP method I want.
 - **Mistakes / gaps**:
@@ -278,10 +311,15 @@ Quiz results are recorded in the history table at the end.
   - **Explanation**: I never call handlers; **FastAPI** does, after the decorator registers
     them. The function name is for readers of the code (and the title in `/docs`); the URL
     comes only from the decorator. Renaming the function does not change the URL.
+- **Closing quiz 2026-11-03 (phase 1)**: correct, moves to `OK`.
+  - **My answer**: it is a decorator that links the `GET` method and the `/health` path of
+    the app to the function below; without it, `/health` is not found because the route is
+    not defined anywhere.
+  - **Fixed**: the function is now part of my answer (the gap of the diagnostic).
 
 ### The `app` object
 
-- **Status**: `NEW`
+- **Status**: `REVIEW`
 - **My question**: is my application "inside" the variable `app`?
 - **Explanation**: `FastAPI(...)` creates an **object** (an instance of the `FastAPI` class)
   and `app` is just the name that points to it. The object holds the route table and the
@@ -291,10 +329,15 @@ Quiz results are recorded in the history table at the end.
   `uvicorn app.main:app` means "import module `app.main` and take the variable `app`";
   Uvicorn keeps it and calls it once per request. The name `app` is a convention: with
   `api = FastAPI()` the command would be `uvicorn app.main:api`.
+- **Closing quiz 2026-11-03 (phase 1)**: too vague, moves to `REVIEW`.
+  - **My answer**: an instance of `FastAPI` "that defines where our API is".
+  - **Gap**: it has two concrete jobs. It is the **route table** (every `@app.get` adds an
+    entry to it), and it is the **ASGI application**: Uvicorn imports it and calls it on
+    every request.
 
 ### Why a `venv`
 
-- **Status**: `REVIEW` (close; two corrections)
+- **Status**: `REVIEW` (purpose fixed; creation command and "why not committed" still open)
 - **My answer**: A virtual environment stores all the project's dependencies, which avoids
   installing everything on my own machine. The operating system has dependencies that projects
   also use, and installing on top of them could cause conflicts; the venv isolates everything.
@@ -332,10 +375,24 @@ Quiz results are recorded in the history table at the end.
     `.venv\Scripts` to the `PATH` of **that terminal**. Every new terminal must activate it
     again (the prompt shows `(.venv)` when active), or call the venv's Python directly:
     `.\.venv\Scripts\python -m uvicorn app.main:app --reload`.
+- **Closing quiz 2026-11-03 (phase 1)**: partial, stays `REVIEW`.
+  - **My answer**: it holds the project's dependencies so several projects can use
+    different versions (Flask, for example) without conflicts; created with
+    `python -m venv .venv`; activated in every new terminal; not committed "because the
+    dependencies are installed in our system with `requirements.txt`" (I admitted I did not
+    remember).
+  - **Fixed**: gap 2, the conflict **between projects**; activation per terminal.
+  - **Still open**:
+    1. On this machine there is no `python` on the `PATH`: the command is
+       `py -3.14 -m venv .venv`. Activate in PowerShell with `.\.venv\Scripts\Activate.ps1`.
+    2. Packages are installed **inside `.venv/`**, not in the system; that contradicts my
+       own first sentence.
+    3. Why `.venv/` is not committed (second time missed): heavy, tied to my machine, and
+       rebuildable from `requirements.txt`. The repository keeps the recipe, not the dish.
 
 ### Server, ASGI and framework
 
-- **Status**: `NEW`
+- **Status**: `OK` (phase 1 closing quiz, 2026-11-03)
 - **Explanation**: FastAPI does not listen on any port. A **server** (Uvicorn) opens the port,
   reads the bytes from the network and parses HTTP. **ASGI** is the contract between that
   server and the framework, so the server can be swapped without touching my code. Flask uses
@@ -344,6 +401,11 @@ Quiz results are recorded in the history table at the end.
 - **Check 2026-10-29 (phase 1, slice 1)**: correct, same day, so it stays `NEW` until a later
   session.
   - **Question**: who opens port 8000, FastAPI or Uvicorn? **My answer**: Uvicorn, the server.
+- **Closing quiz 2026-11-03 (phase 1)**: correct, moves to `OK`.
+  - **Question**: why is `python main.py` not enough? **My answer**: Uvicorn is the server;
+    it has to be started and pointed at our `app`.
+  - **Precision**: `python main.py` only builds the `app` object and exits; nothing stays
+    listening on a port.
 
 ### One repository or two (monorepo vs polyrepo)
 
@@ -362,7 +424,7 @@ Quiz results are recorded in the history table at the end.
 
 ### Path params vs query params
 
-- **Status**: `REVIEW`
+- **Status**: `OK` (phase 1 closing quiz, 2026-11-03)
 - **Explanation**: In `GET /habits/42?done=true&limit=10`, `42` is a **path param** and
   `done`, `limit` are **query params**.
   - **Path param**: part of the route (`/habits/{habit_id}`), required, **identifies** a
@@ -387,10 +449,15 @@ Quiz results are recorded in the history table at the end.
     **Mistake**: right kind of parameter, wrong endpoint. `/habits/{habit_id}` returns **one**
     habit, so there is nothing to limit. `limit` belongs to the list endpoint:
     `@app.get("/habits") def list_habits(done: bool | None = None, limit: int | None = None)`.
+- **Closing quiz 2026-11-03 (phase 1)**: correct, moves to `OK`.
+  - **Question**: in `GET /habits/3?done=true`, which is the path param and which the query
+    param, and when do I use each? **My answer**: `3` is the path param (the habit id),
+    `done` the query param; path for a concrete resource ("give me habit 3"), query to filter
+    ("only done ones").
 
 ### Automatic validation: 404 from my code vs 422 from FastAPI
 
-- **Status**: `NEW`
+- **Status**: `OK` (phase 1 closing quiz, 2026-11-03)
 - **Explanation**: Everything in a URL arrives as text. Type hints (`habit_id: int`,
   `done: bool`) tell FastAPI what I expect; it uses **Pydantic** to convert (`"42"` -> `42`)
   and to reject invalid input with **422 Unprocessable Entity** before my function runs. The
@@ -402,10 +469,16 @@ Quiz results are recorded in the history table at the end.
     each error? **My answer**: 99 is a valid int, my code does not find it in the list and
     raises `HTTPException` 404 with `Habit not found`; `abc` is not an int, so FastAPI rejects
     it with 422 while validating with Pydantic.
+- **Closing quiz 2026-11-03 (phase 1)**: 4/4, moves to `OK`.
+  - **Question**: status code and who generates it for `/habits/99`, `/habits/abc`,
+    `/habits?limit=0`, `/habits?done=maybe`? **My answer**: 404 from my code; 422 from
+    FastAPI (Pydantic); 422 from FastAPI because of `Query(ge=1)`; 422 from FastAPI.
+  - **Note**: I called 422 "Unprocessable Content", its current name (RFC 9110); older
+    documents call it "Unprocessable Entity". Same code.
 
 ### Slicing and negative indexes
 
-- **Status**: `NEW`
+- **Status**: `REVIEW`
 - **Where I got stuck**: I tried to put a counter inside a list comprehension to stop after
   `limit` items. A comprehension has no `break`; the clean way is two steps: **filter**, then
   **cut** the result with slicing.
@@ -418,10 +491,19 @@ Quiz results are recorded in the history table at the end.
   interpreted. Same for `limit=0`, which returned `[]`.
 - **Structure lesson**: my first version repeated `[:limit]` in both branches of the `if`.
   When both branches end with the same step, that step goes after the `if`.
+- **Closing quiz 2026-11-03 (phase 1)**: results right, reason missing, moves to `REVIEW`.
+  - **Question**: with 3 habits, what do `[:2]`, `[:None]` and `[:-1]` return, and why was
+    `limit=-1` a bug? **My answer**: first and second; all; first and second. I did not
+    remember why `-1` was a bug: "a negative limit is like saying show nothing, and it still
+    shows".
+  - **Gap**: I computed `[:-1]` right but did not connect it: Python reads `-1` as "count
+    from the end", so `?limit=-1` silently meant "all except the last". The bug is that
+    nonsense input was **interpreted** instead of **rejected**. `Query(ge=1)` makes FastAPI
+    answer 422 before my function runs.
 
 ### Validation constraints with `Query`
 
-- **Status**: `NEW`
+- **Status**: `OK` (phase 1 closing quiz, 2026-11-03)
 - **Explanation**: Types reject the wrong kind of value (`limit=abc`); **constraints** reject
   values of the right kind that make no sense (`limit=-1`).
   `limit: Annotated[int | None, Query(ge=1)] = None` keeps the type `int | None` and adds the
@@ -436,10 +518,12 @@ Quiz results are recorded in the history table at the end.
   of the whole endpoint (also shown in `/docs`). Repeating parameter details in both places
   makes them drift apart. A parameter description must make sense on its own, including
   what happens when the parameter is omitted.
+- **Closing quiz 2026-11-03 (phase 1)**: correct, moves to `OK`. `limit=0` -> 422 from
+  FastAPI because of `ge=1`; whatever the user sends below 1 never reaches my function.
 
 ### Dependency injection (`Depends`)
 
-- **Status**: `NEW`
+- **Status**: `OK` (phase 1 closing quiz, 2026-11-03)
 - **My first reaction**: "I do not see what it is for". Fair: with an in-memory list the
   benefit is invisible; it pays off from phase 2 on.
 - **Explanation**: an endpoint **declares** what it needs
@@ -471,6 +555,13 @@ Quiz results are recorded in the history table at the end.
     **Extra**: `get_habit_store()` would run once at import time, and FastAPI fails at
     startup with `TypeError: [...] is not a callable object`, because it needs something it
     can call on every request.
+- **Closing quiz 2026-11-03 (phase 1)**: concept right, moves to `OK`.
+  - **Question**: find the bug in `Depends(get_habit_store())`, and what does `Depends` give
+    over using `HABITS` directly? **My answer**: the parentheses call the function and pass
+    its result; without them `Depends` keeps a reference and FastAPI calls it when needed.
+    With the result, an override for tests would not work.
+  - **Precision (second time)**: it does not even get to the override. The app **fails at
+    startup** with `TypeError: [...] is not a callable object`.
 
 ---
 
@@ -487,10 +578,11 @@ Quiz results are recorded in the history table at the end.
 | 2026-10-31 | Check | 1 | Partial | Slice 2 (`/habits`): 404 vs 422 OK; `bool \| None` behavior OK, weak reason; `limit` is a query param OK, but put on the single-habit endpoint |
 | 2026-10-31 | Exercise | 1 | Pass (with hints) | Implemented `limit` myself: filter then slice; found the `limit=-1` bug by testing; added `Query(ge=1)` |
 | 2026-10-31 | Check | 1 | Pass | Slice 3 (`Depends`): `store` hidden from `/docs` (client cannot send it), override demo 404, `Depends(f())` passes the result |
+| 2026-11-03 | Closing | 1 | Pass | 10 concepts to `OK` (Git, commit type, HTTP parts, `GET`/`POST`, decorator, ASGI, path vs query, 404 vs 422, `Query` constraints, `Depends`); `REVIEW`: commit format, venv, `app` object, negative slicing |
 
 ## Pending
 
-- Next: phase 1 closing quiz (all phase 1 concepts are now introduced).
-- Phase 1 closing quiz must include every `REVIEW` entry above: Git `add`/`commit`/`push`,
-  Conventional Commits format, HTTP request parts, `GET` vs `POST`, `@app.get` decorator,
-  `venv`, path vs query params.
+- Phase 1 closed on 2026-11-03 (closing quiz passed).
+- Next: phase 2 (data) diagnostic quiz. It must include every `REVIEW` entry above:
+  Conventional Commits format, `venv` (creation command, why `.venv/` is not committed),
+  the `app` object, slicing with negative indexes.
