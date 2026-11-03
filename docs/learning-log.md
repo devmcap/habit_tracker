@@ -679,6 +679,48 @@ Quiz results are recorded in the history table at the end.
   objects to rows, and **generates the SQL** for me (here: SQLAlchemy). SQL first because
   when an ORM query is slow or wrong, I must read the SQL it generated to understand why.
 
+### PostgreSQL vs MySQL
+
+- **Status**: `NEW`
+- **My question**: how is PostgreSQL different from MySQL?
+- **Explanation**: both are relational, free, open source and speak SQL; what I learn here
+  works almost the same in both. PostgreSQL is stricter (errors instead of silent fixes),
+  has a real `boolean` and richer types (`jsonb`, arrays), and runs structure changes
+  (`CREATE`, `ALTER`) **inside a transaction**, so a failed migration is undone. MySQL is
+  owned by Oracle (MariaDB is the community fork) and common in classic PHP/WordPress code.
+  Dialect example: `GENERATED ALWAYS AS IDENTITY` (PostgreSQL) vs `AUTO_INCREMENT` (MySQL).
+
+### Database server, client and `PATH`
+
+- **Status**: `NEW`
+- **Explanation (installation 2026-11-03)**: PostgreSQL 18.6 is a **server**, like Uvicorn
+  but for data: it listens on port **5432**, runs as a Windows **service** (starts with the
+  computer) and keeps data **on disk**. `psql` is a **client** for typing SQL by hand; my API
+  will be another client. `pg_hba.conf` only lets in connections from my own machine, always
+  with a password. The `postgres` user is the superuser: its password never goes into the
+  repository.
+- **`PATH`**: the list of folders where Windows looks for commands. The installer does not add
+  `C:\Program Files\PostgreSQL\18\bin`, so I added it for my user with
+  `[Environment]::SetEnvironmentVariable(...)`. Unlike `Activate.ps1`, it is permanent, but
+  each terminal reads `PATH` only when it starts, so I had to open a new one.
+
+### `psql` basics
+
+- **Status**: `NEW`
+- **My mistake (2026-11-03)**: I typed `SELECT version()` without `;` and pressed Enter, then
+  `SELECT version();`, and got `ERROR: error de sintaxis ... LÍNEA 2`.
+- **Explanation**: without `;`, psql does not run the statement; it keeps it in a buffer and
+  waits for more. The prompt shows it: `postgres=#` waits for a **new** statement,
+  `postgres-#` means the previous one **continues**. Both lines were joined into one invalid
+  statement. `\r` (or `Ctrl+C`) empties the buffer.
+  - SQL statements end with `;`. Commands starting with `\` (`\q`, `\r`, `\l`, `\c`, `\dt`)
+    belong to psql, not SQL, and need no `;`.
+  - SQL always answers with a table, even for one value: `SELECT version();` returned one
+    column (`version`) and one row (`(1 fila)`).
+- **Coming next**: one server holds several databases. The project gets its own
+  (`CREATE DATABASE habit_tracker;`), like one venv per project; `postgres` is for
+  administration.
+
 ---
 
 ## Quiz history
@@ -703,5 +745,7 @@ Quiz results are recorded in the history table at the end.
 - Phase 2 diagnostic done on 2026-11-03. Not retested that day, because they were explained
   the same day: the `app` object, slicing with negative indexes, `venv`. Ask them at the
   start of the next session.
-- Next: phase 2 slice 1, SQL by hand on PostgreSQL: `habit` and `completion` tables,
-  primary and foreign keys.
+- PostgreSQL 18.6 installed on 2026-11-03 (official installer), `psql` on the `PATH`,
+  first `SELECT version();` worked.
+- Next: `CREATE DATABASE habit_tracker;`, `\l`, `\c habit_tracker`, `\dt`; then phase 2
+  slice 1, SQL by hand: `habit` and `completion` tables, primary and foreign keys.
