@@ -174,6 +174,10 @@ Quiz results are recorded in the history table at the end.
        diff already say where.
     4. Right: imperative `record` (not `register`), lowercase, no final period.
   - **Final message**: `docs: record commit message feedback` (`6d4b7b6`). Good.
+  - **Second commit**: `docs: record exam result for phase 1 closing` (`e8c4266`). Format
+    right without help. English: "for phase 1 closing" sounds unnatural; nouns used as
+    adjectives go in front: `docs: record phase 1 closing quiz results`. Use the log's
+    words ("quiz", not "exam") so history and log are easy to search together.
 
 ### User stories and MVP
 
@@ -196,10 +200,13 @@ Quiz results are recorded in the history table at the end.
 
 ### Store facts, compute derived values
 
-- **Status**: `NEW`
+- **Status**: `REVIEW`
 - **Explanation**: A streak is not stored as a counter that is incremented every day. We store
   the facts (completion of habit H on date D) and compute the streak from them. A stored
   result can get corrupted by any bug and cannot be rebuilt; facts can always be recomputed.
+- **Phase 2 diagnostic 2026-11-03**: not applied. Asked what is wrong with a `done` column
+  in the habit row, I saw no problem. See "Modeling habits: completions, not a `done`
+  column" in phase 2.
 
 ### "Today" depends on the user's timezone
 
@@ -389,6 +396,14 @@ Quiz results are recorded in the history table at the end.
        own first sentence.
     3. Why `.venv/` is not committed (second time missed): heavy, tied to my machine, and
        rebuildable from `requirements.txt`. The repository keeps the recipe, not the dish.
+- **Retest 2026-11-03 (phase 2 diagnostic, same day as the correction)**: almost right, stays
+  `REVIEW` until a later session.
+  - **Question**: exact commands, from `backend/`, for a teammate on Windows to start the API,
+    and why `.venv/` is not in the repository.
+  - **My answer**: `py -3.14 -m venv .venv`, `.\.venv\Scripts\Activate.ps1`,
+    `pip install -r requirements.txt`; not committed because it is heavy, tied to my machine,
+    and `requirements.txt` is the recipe to rebuild it.
+  - **Missing**: the last step, the one that starts the API: `uvicorn app.main:app --reload`.
 
 ### Server, ASGI and framework
 
@@ -563,6 +578,107 @@ Quiz results are recorded in the history table at the end.
   - **Precision (second time)**: it does not even get to the override. The app **fails at
     startup** with `TypeError: [...] is not a callable object`.
 
+## Phase 2 — Data
+
+### Why a database instead of a list in memory
+
+- **Status**: `REVIEW`
+- **My answer (diagnostic 2026-11-03)**: the data reset when the app restarts; people cannot
+  change them because they are in the code; people could see possibly sensitive data in the
+  code if the app is on the web.
+- **Mistakes / gaps**:
+  1. A list **can** be changed while the server runs (`HABITS.append(...)`); nobody can yet
+     because there is no write endpoint. The real problem is that changes do not
+     **persist**.
+  2. Clients of a web API never see the server's Python code, only its responses. Here the
+     data are visible for another reason: the GitHub repository is public. Real data never
+     go into code or Git.
+  3. Missing: several server processes (normal in production) each have their **own** list;
+     two writes at the same time can overwrite each other; searching a big list is slow
+     (databases have indexes); no backups; no rules (nothing stops two habits with the
+     same `id`).
+
+### Table, row, column, primary key
+
+- **Status**: `REVIEW`
+- **My answer (diagnostic 2026-11-03)**: a table describes an entity (I typed "identidad";
+  I meant "entidad"), a row is one record, a column is what the entity is made of, and the
+  primary key is "how it is organized". Example: table `habit`; columns `id`, `name`,
+  `done`; row `1, "Drink water", true`; primary key `id`. The example is right.
+- **Mistake**: the primary key does not organize the table. It **uniquely identifies each
+  row**: never repeated, never empty, and it should never change. It is what `/habits/3`
+  uses to find one habit.
+
+### First SQL query
+
+- **Status**: `NEW` (right on the first try, no previous explanation)
+- **My answer (diagnostic 2026-11-03)**: `SELECT * FROM habit WHERE done = false`. Correct.
+- **Note**: **SQL** is the language; **MySQL** is one database that speaks it. This project
+  uses **PostgreSQL** (`docs/product.md`).
+
+### Modeling habits: completions, not a `done` column
+
+- **Status**: `REVIEW`
+- **My answer (diagnostic 2026-11-03)**: no problem with `done` in the habit; "it is
+  complete or not, and that is it". Then I proposed a `habit_status` table
+  (`id`, `status`: pending, done, not done) referenced from `habit`.
+- **Mistakes / gaps**: a habit **repeats**. `done = true` does not say **which day**.
+  1. Tomorrow it must be pending again: something would have to reset it at midnight (and
+     whose midnight? every user has a timezone).
+  2. The reset **erases history**: a streak (consecutive days) and points cannot be computed.
+  3. US11b (mark yesterday as done) is impossible: one boolean has no room for yesterday.
+  4. My `habit_status` table is a valid pattern for a list of fixed values, but it still
+     stores **one** status per habit, so it has the same problem.
+- **Correct explanation**: store the **fact** of each completion (phase 0, "Store facts,
+  compute derived values"):
+  - `habit`: `id`, `name`, weekdays, ... (what the habit is).
+  - `completion`: `id`, `habit_id` (foreign key to `habit.id`), `user_id`, `date`, with a
+    rule "one completion per habit and date" (`UNIQUE (habit_id, date)`).
+  - "Done today" = a completion exists for that habit with today's local date. Streaks and
+    points are computed from these rows. Yesterday is just another row.
+  - Contrast: a **task** is one-off ("once completed, it is done"), so a column in the task
+    itself (`completed_at`) **is** right there.
+- **Check 2026-11-03 (after a day-by-day table diagram)**: correct, same day, so it stays
+  `REVIEW`.
+  - **My answer**: `completion` stores each completion with its date; a missed day simply
+    has no row and nothing has to be done; yesterday can be added later. So I can compute
+    the streak and see which days I missed. With `done`, the value is only "now", it is
+    overwritten every day without any date, and history is lost.
+  - **Precision**: it stores **completions** (facts), not habits: one row per habit and day
+    done. A day without a row breaks the streak only if the habit was **scheduled** that day
+    (weekdays, US5); a Saturday off for a Mon–Fri habit is not a miss.
+
+### Foreign key
+
+- **Status**: `NEW` (right on the first try, no previous explanation)
+- **My answer (diagnostic 2026-11-03)**: a key with a connection to the primary key of
+  another table. Correct.
+- **Addition**: the database **enforces** it (referential integrity): a completion for a
+  habit `99` that does not exist is rejected.
+
+### Transactions
+
+- **Status**: `NEW` (right intuition, no previous explanation)
+- **Question (diagnostic 2026-11-03)**: redeeming a reward means "subtract 50 points" and
+  "record the redemption"; the server crashes in between.
+- **My answer**: it should roll back and not confirm the changes, so when the user comes back
+  nothing was redeemed, as if it never happened.
+- **Precision**: without a transaction, the points are lost and no redemption is recorded.
+  A **transaction** groups both writes: all or nothing (`COMMIT` makes them permanent,
+  `ROLLBACK` discards them). The subtraction is not "left pending": it never becomes
+  visible. Applying "store facts" again, the balance could even be computed
+  (points earned - points spent), so redeeming would be **one** write.
+
+### ORM
+
+- **Status**: `NEW`
+- **My answer (diagnostic 2026-11-03)**: never heard of it; guessed "Object Relation Model",
+  something to work with database objects from Python. SQL by hand first to have the basics
+  before using Python to touch databases.
+- **Correct explanation**: **Object-Relational Mapping**. It maps classes to tables and
+  objects to rows, and **generates the SQL** for me (here: SQLAlchemy). SQL first because
+  when an ORM query is slow or wrong, I must read the SQL it generated to understand why.
+
 ---
 
 ## Quiz history
@@ -579,10 +695,13 @@ Quiz results are recorded in the history table at the end.
 | 2026-10-31 | Exercise | 1 | Pass (with hints) | Implemented `limit` myself: filter then slice; found the `limit=-1` bug by testing; added `Query(ge=1)` |
 | 2026-10-31 | Check | 1 | Pass | Slice 3 (`Depends`): `store` hidden from `/docs` (client cannot send it), override demo 404, `Depends(f())` passes the result |
 | 2026-11-03 | Closing | 1 | Pass | 10 concepts to `OK` (Git, commit type, HTTP parts, `GET`/`POST`, decorator, ASGI, path vs query, 404 vs 422, `Query` constraints, `Depends`); `REVIEW`: commit format, venv, `app` object, negative slicing |
+| 2026-11-03 | Diagnostic | 2 | Partial | SQL query, foreign key, transaction intuition right; gaps: why a database, primary key, modeling completions (`done` column) |
 
 ## Pending
 
 - Phase 1 closed on 2026-11-03 (closing quiz passed).
-- Next: phase 2 (data) diagnostic quiz. It must include every `REVIEW` entry above:
-  Conventional Commits format, `venv` (creation command, why `.venv/` is not committed),
-  the `app` object, slicing with negative indexes.
+- Phase 2 diagnostic done on 2026-11-03. Not retested that day, because they were explained
+  the same day: the `app` object, slicing with negative indexes, `venv`. Ask them at the
+  start of the next session.
+- Next: phase 2 slice 1, SQL by hand on PostgreSQL: `habit` and `completion` tables,
+  primary and foreign keys.
