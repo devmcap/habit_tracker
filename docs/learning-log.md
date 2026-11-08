@@ -200,13 +200,15 @@ Quiz results are recorded in the history table at the end.
 
 ### Store facts, compute derived values
 
-- **Status**: `REVIEW`
+- **Status**: `OK` (since the 2026-11-08 retest)
 - **Explanation**: A streak is not stored as a counter that is incremented every day. We store
   the facts (completion of habit H on date D) and compute the streak from them. A stored
   result can get corrupted by any bug and cannot be rebuilt; facts can always be recomputed.
 - **Phase 2 diagnostic 2026-11-03**: not applied. Asked what is wrong with a `done` column
   in the habit row, I saw no problem. See "Modeling habits: completions, not a `done`
   column" in phase 2.
+- **Retest 2026-11-08 (later session)**: applied without help. Streaks are computed from
+  the stored completions, not kept in a column. Moves to `OK`.
 
 ### "Today" depends on the user's timezone
 
@@ -326,7 +328,7 @@ Quiz results are recorded in the history table at the end.
 
 ### The `app` object
 
-- **Status**: `REVIEW`
+- **Status**: `REVIEW` (second time vague)
 - **My question**: is my application "inside" the variable `app`?
 - **Explanation**: `FastAPI(...)` creates an **object** (an instance of the `FastAPI` class)
   and `app` is just the name that points to it. The object holds the route table and the
@@ -341,6 +343,12 @@ Quiz results are recorded in the history table at the end.
   - **Gap**: it has two concrete jobs. It is the **route table** (every `@app.get` adds an
     entry to it), and it is the **ASGI application**: Uvicorn imports it and calls it on
     every request.
+- **Retest 2026-11-08 (later session)**: still vague, stays `REVIEW`.
+  - **My answer**: the `FastAPI()` object that instantiates the project, so that "the server
+    knows where all the information is" when it starts.
+  - **Gap**: the same as last time. The two concrete jobs are still missing: it is the
+    **route table** (each `@app.get` adds a route), and Uvicorn **calls it on every
+    request**. Short form to remember: "routes go in, requests go through".
 
 ### Why a `venv`
 
@@ -404,6 +412,18 @@ Quiz results are recorded in the history table at the end.
     `pip install -r requirements.txt`; not committed because it is heavy, tied to my machine,
     and `requirements.txt` is the recipe to rebuild it.
   - **Missing**: the last step, the one that starts the API: `uvicorn app.main:app --reload`.
+- **Retest 2026-11-08 (later session)**: purpose right, command wrong, stays `REVIEW`.
+  - **My answer**: a "file" with all the project's dependencies on my machine; my venv is
+    not my teammate's; it avoids conflicts between projects that use the same packages in
+    different versions. Command: `uvicorn main:app app --reload`.
+  - **Fixed**: the conflict between projects; the venv is tied to my machine.
+  - **Still open**:
+    1. It is a **folder** (`.venv/`), not a file: its own Python plus the installed packages.
+    2. The command is `uvicorn app.main:app --reload`, run from `backend/`. Read it as
+       `<module>:<variable>`: module `app.main` is the file `app/main.py` (the dot replaces
+       the folder separator), and `app` after the colon is the variable `app = FastAPI()`.
+       `main:app` fails from `backend/` because there is no `backend/main.py`, and the
+       extra `app` is not part of the command.
 
 ### Server, ASGI and framework
 
@@ -493,7 +513,7 @@ Quiz results are recorded in the history table at the end.
 
 ### Slicing and negative indexes
 
-- **Status**: `REVIEW`
+- **Status**: `REVIEW` (confused `[-2:]` with `[:-2]`)
 - **Where I got stuck**: I tried to put a counter inside a list comprehension to stop after
   `limit` items. A comprehension has no `break`; the clean way is two steps: **filter**, then
   **cut** the result with slicing.
@@ -515,6 +535,21 @@ Quiz results are recorded in the history table at the end.
     from the end", so `?limit=-1` silently meant "all except the last". The bug is that
     nonsense input was **interpreted** instead of **rejected**. `Query(ge=1)` makes FastAPI
     answer 422 before my function runs.
+- **Retest 2026-11-08 (later session)**: wrong, stays `REVIEW`.
+  - **Question**: with `habits = ["read", "run", "meditate", "water"]`, what does
+    `habits[-2:]` return? **My answer**: `"read", "run"`, because `[-2:]` removes the last
+    two.
+  - **Mistake**: that is `habits[:-2]`. The side of the colon decides the meaning:
+    `[start:end]`. `[-2:]` = **start** at the second from the end and go to the end:
+    `["meditate", "water"]` (the last two). `[:-2]` = **stop before** the second from the
+    end: `["read", "run"]` (all except the last two).
+
+    | Index      | 0      | 1     | 2          | 3       |
+    |------------|--------|-------|------------|---------|
+    | Negative   | -4     | -3    | -2         | -1      |
+    | Item       | read   | run   | meditate   | water   |
+    | `[-2:]`    |        |       | yes        | yes     |
+    | `[:-2]`    | yes    | yes   |            |         |
 
 ### Validation constraints with `Query`
 
@@ -600,7 +635,7 @@ Quiz results are recorded in the history table at the end.
 
 ### Table, row, column, primary key
 
-- **Status**: `REVIEW`
+- **Status**: `REVIEW` (definition improved; chose `name` as the key)
 - **My answer (diagnostic 2026-11-03)**: a table describes an entity (I typed "identidad";
   I meant "entidad"), a row is one record, a column is what the entity is made of, and the
   primary key is "how it is organized". Example: table `habit`; columns `id`, `name`,
@@ -608,6 +643,20 @@ Quiz results are recorded in the history table at the end.
 - **Mistake**: the primary key does not organize the table. It **uniquely identifies each
   row**: never repeated, never empty, and it should never change. It is what `/habits/3`
   uses to find one habit.
+- **Retest 2026-11-08 (later session)**: definition almost right, key choice wrong, stays
+  `REVIEW`.
+  - **My answer**: the key that lets us find one unique value in the table; for `habit` I
+    would choose `name` (I did not remember the columns).
+  - **Fixed**: "unique" instead of "how it is organized". Precision: it identifies a
+    **row**, not a value.
+  - **Mistake**: `name` breaks two of the three rules.
+    1. **It repeats**: the app is multi-user, so two users can both have "Read".
+    2. **It changes**: if I rename "Read" to "Read 20 pages", every `completion` row that
+       points to it by name would have to change too.
+  - **Correct explanation**: use an `id` with no meaning of its own (a **surrogate key**),
+    generated by the database: `id integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY`. A
+    column taken from the real data, like `name`, is a **natural key**; it is only safe when
+    it never repeats and never changes, which is rare. My own diagnostic example used `id`.
 
 ### First SQL query
 
@@ -618,7 +667,7 @@ Quiz results are recorded in the history table at the end.
 
 ### Modeling habits: completions, not a `done` column
 
-- **Status**: `REVIEW`
+- **Status**: `OK` (since the 2026-11-08 retest)
 - **My answer (diagnostic 2026-11-03)**: no problem with `done` in the habit; "it is
   complete or not, and that is it". Then I proposed a `habit_status` table
   (`id`, `status`: pending, done, not done) referenced from `habit`.
@@ -647,6 +696,10 @@ Quiz results are recorded in the history table at the end.
   - **Precision**: it stores **completions** (facts), not habits: one row per habit and day
     done. A day without a row breaks the streak only if the habit was **scheduled** that day
     (weekdays, US5); a Saturday off for a Mon–Fri habit is not a miss.
+- **Retest 2026-11-08 (later session)**: correct without help, moves to `OK`.
+  - **My answer**: `completion` keeps a history of every completion with its date; a missed
+    day simply has no row, so I can see the misses and compute streaks. With `done`, I only
+    see today's state: it resets every day and there is no record of yesterday.
 
 ### Foreign key
 
@@ -720,6 +773,89 @@ Quiz results are recorded in the history table at the end.
 - **Coming next**: one server holds several databases. The project gets its own
   (`CREATE DATABASE habit_tracker;`), like one venv per project; `postgres` is for
   administration.
+- **Done 2026-11-08**: `CREATE DATABASE habit_tracker;`, `\l`, `\c habit_tracker` (the
+  prompt changed to `habit_tracker=#`), `\dt` -> "No se encontraron tablas." I predicted
+  `\dt` would list tables, but not that a new database is empty.
+  - A connection belongs to **one** database: `\c` closes it and opens a new one; it is not
+    "activating" like a venv.
+  - `CREATE DATABASE` copies `template1`; `template0` is the untouched backup.
+  - Garbled characters (`Due±o`) come from the console code page (850) differing from
+    psql's (1252). Cosmetic: `chcp 1252` before `psql` fixes it.
+
+### `CREATE TABLE`, types and constraints
+
+- **Status**: `NEW` (predictions right on the first try, same session)
+- **Slice 1 (2026-11-08)**, typed by hand in psql:
+
+  ```sql
+  CREATE TABLE habit (
+      id         integer     GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      name       text        NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+  );
+  ```
+
+- **Explanation**: the table definition holds rules the database enforces even if my Python
+  code has a bug: the last line of defense for the data. `GENERATED ALWAYS AS IDENTITY`
+  makes the database generate the `id`; `NOT NULL` makes a column required; `DEFAULT`
+  fills a column I leave out; `timestamptz` stores date and time with the timezone.
+- **My predictions**: `id` starts at 1 and increments, `created_at` gets the insert time;
+  `INSERT ... VALUES (NULL)` fails because of `NOT NULL`. Both right.
+- **What the output also showed**:
+  1. Both rows got the **same** `created_at`: `now()` is the start time of the
+     **transaction**, and one `INSERT` with two rows is one transaction.
+  2. The failed row was `(3, null, ...)`: the `id` 3 was **used up** even though the insert
+     failed. The next habit gets `id` 4. Generated ids are not given back (so two
+     connections never get the same one), so **ids can have gaps**: never use them to count.
+  3. `\d habit` shows `"habit_pkey" PRIMARY KEY, btree (id)`: a primary key creates an
+     **index** automatically, which is why finding a row by `id` is fast.
+  4. `+01`: the value is stored as an absolute moment and shown in the session's timezone
+     (Madrid, UTC+1 in winter).
+
+### The `completion` table: foreign key and `UNIQUE` in practice
+
+- **Status**: `NEW` (written by me, same session)
+- **Exercise 2026-11-08**: I wrote the table myself from five rules. Final version:
+
+  ```sql
+  CREATE TABLE completion (
+      id           integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      habit_id     integer NOT NULL REFERENCES habit (id),
+      completed_on date    NOT NULL,
+      UNIQUE (habit_id, completed_on)
+  );
+  ```
+
+- **Right on the first try**: primary key, `REFERENCES habit (id)` with the same type as
+  `habit.id`, `NOT NULL`, `UNIQUE` over two columns.
+- **Corrected before running it**:
+  1. Name: I wrote `completion_on`. Column names read like phrases: "completed on
+     November 8", like `created_at`. Now `completed_on`.
+  2. I wrote `DEFAULT now()`. It works, but it takes the day from the **server's**
+     timezone (Madrid). A user in Mexico marking a habit on November 8 at 20:00 local time
+     would get November 9 (I worked this out myself): November 8 looks missed, the streak
+     breaks, and the next morning `UNIQUE` rejects her real November 9 completion.
+     - **Fix**: no `DEFAULT`. The database does not know each user's timezone; the app
+       does. In phase 3 every user gets a `timezone` (an IANA name like
+       `America/Mexico_City`, not "-7 hours", because of daylight saving), and the API
+       computes `datetime.now(ZoneInfo(user.timezone)).date()` and sends it. `NOT NULL`
+       then forces every insert to say which day it is: a loud error beats silent wrong
+       data. The D3 rule (today or yesterday) is also checked in the app.
+     - We store a `date`, not a timestamp, because the fact the user states is "I did it
+       **on the 8th**".
+- **Mistake while running it**: `ERROR: no existe la relación «habit»`. The prompt was
+  `postgres=#`: a new terminal connected to the `postgres` database, where `habit` does not
+  exist. Fix: `\c habit_tracker`, or `psql -U postgres -d habit_tracker`. Always read the
+  prompt first. A failed statement leaves nothing half created.
+- **Predictions for three inserts**: all right.
+  1. `(1, '2026-11-08')` -> inserted.
+  2. Same again -> error from `UNIQUE (habit_id, completed_on)`.
+  3. `(99, '2026-11-08')` -> error from the foreign key: **referential integrity**, no
+     "orphan" completion pointing to a habit that does not exist.
+- **Prediction for the next valid insert's `id`**: I said 2; it was **4**. I explained it
+  myself after seeing it: the two failed inserts had already used up ids 2 and 3. Same
+  lesson as the `habit` table (ids can have gaps), but I did not apply it before seeing the
+  result.
 
 ---
 
@@ -738,14 +874,19 @@ Quiz results are recorded in the history table at the end.
 | 2026-10-31 | Check | 1 | Pass | Slice 3 (`Depends`): `store` hidden from `/docs` (client cannot send it), override demo 404, `Depends(f())` passes the result |
 | 2026-11-03 | Closing | 1 | Pass | 10 concepts to `OK` (Git, commit type, HTTP parts, `GET`/`POST`, decorator, ASGI, path vs query, 404 vs 422, `Query` constraints, `Depends`); `REVIEW`: commit format, venv, `app` object, negative slicing |
 | 2026-11-03 | Diagnostic | 2 | Partial | SQL query, foreign key, transaction intuition right; gaps: why a database, primary key, modeling completions (`done` column) |
+| 2026-11-08 | Retest | 1-2 | Partial | To `OK`: modeling completions, store facts. `REVIEW`: `app` object (vague again), `[-2:]` vs `[:-2]`, uvicorn command (`app.main:app`), primary key (`name` chosen) |
+| 2026-11-08 | Exercise | 2 | Pass (with hints) | Slice 1: wrote `completion` myself; fixed name and `DEFAULT now()` (timezone) after review; insert predictions right; `id` gap predicted wrong, explained it myself |
 
 ## Pending
 
 - Phase 1 closed on 2026-11-03 (closing quiz passed).
-- Phase 2 diagnostic done on 2026-11-03. Not retested that day, because they were explained
-  the same day: the `app` object, slicing with negative indexes, `venv`. Ask them at the
-  start of the next session.
+- Phase 2 diagnostic done on 2026-11-03.
+- Retest 2026-11-08: modeling completions and store facts moved to `OK`. Still `REVIEW`
+  (ask next session): the `app` object, `[-2:]` vs `[:-2]`, the uvicorn command, primary
+  key (why not `name`), why a database.
 - PostgreSQL 18.6 installed on 2026-11-03 (official installer), `psql` on the `PATH`,
   first `SELECT version();` worked.
-- Next: `CREATE DATABASE habit_tracker;`, `\l`, `\c habit_tracker`, `\dt`; then phase 2
-  slice 1, SQL by hand: `habit` and `completion` tables, primary and foreign keys.
+- 2026-11-08: database `habit_tracker` created; phase 2 slice 1 done by hand in psql
+  (`habit`, `completion`).
+- Next: phase 2 slice 2, queries by hand: `JOIN` habit with completion, "done today";
+  what happens to completions when a habit is deleted (`ON DELETE`).
